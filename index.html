@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Калькулятор Атолл</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- === PWA — установка как приложение на Android и iOS (полный экран) === -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="АТОЛЛ">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        :root {
+            --primary: #2563eb; 
+            --bg: #0f172a; 
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9; 
+            --text-muted: #94a3b8; 
+            --danger: #ef4444;
+            --dark-panel: #020617; 
+            --scimol: #0891b2; --azol: #c2410c; --gf1: #7c3aed; --water: #3b82f6;
+            --uno: #db2777; --success: #10b981;
+            --neon-blue: rgba(37, 99, 235, 0.4);
+            --neon-purple: rgba(124, 58, 237, 0.3);
+            --gold: #f59e0b;
+            --input-bg: #1e293b;
+        }
+
+        body.light-theme {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --input-bg: #ffffff;
+            --dark-panel: #0f172a;
+        }
+        
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            padding: 10px; 
+            transition: 0.3s; 
+        }
+        .container { width: 100%; max-width: 480px; }
+        .header-main { display: flex; justify-content: space-between; align-items: center; padding: 15px 5px; margin-bottom: 15px; }
+        .brand { font-size: 1.6rem; font-weight: 900; letter-spacing: 2px; background: linear-gradient(135deg, #2563eb, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.2)); position: relative; }
+        
+        .header-btns { display: flex; gap: 8px; }
+        .info-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); width: 38px; height: 38px; border-radius: 12px; color: var(--primary); font-size: 1.2rem; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px var(--neon-blue); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        
+        #infoModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal-content { background: var(--card-bg); width: 85%; max-width: 350px; padding: 25px; border-radius: 28px; text-align: center; box-shadow: 0 0 30px var(--neon-blue); color: var(--text-main); }
+        .modal-text { font-size: 1rem; line-height: 1.6; margin-bottom: 20px; font-weight: 400; }
+        .dev-name { display: block; margin-top: 15px; font-weight: 800; color: var(--primary); }
+        .close-modal { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 14px; font-weight: 800; cursor: pointer; }
+        
+        .card { background: var(--card-bg); padding: 18px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2), 0 0 15px var(--neon-blue); border: 1px solid rgba(37, 99, 235, 0.1); }
+        
+        .stock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stock-input-group { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); }
+        body.light-theme .stock-input-group { background: #f1f5f9; border-color: #e2e8f0; }
+        
+        .stock-input-group label { color: var(--text-muted); font-size: 0.65rem; margin-bottom: 5px; }
+        .stock-input-group input { padding: 8px; font-size: 1rem; margin-bottom: 0; background: var(--input-bg); border: 1px solid rgba(255,255,255,0.1); }
+
+        label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; color: var(--text-muted); padding-left: 5px; }
+        input { width: 100%; padding: 16px; border: 2px solid rgba(255,255,255,0.05); border-radius: 16px; background: var(--input-bg); color: var(--text-main); font-family: 'Montserrat', sans-serif; font-size: 1.3rem; font-weight: 800; outline: none; box-sizing: border-box; margin-bottom: 12px; transition: 0.2s; }
+        body.light-theme input { border-color: rgba(0,0,0,0.03); }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--neon-blue); }
+        
+        .density-wrapper { position: relative; display: flex; align-items: center; margin-bottom: 12px; }
+        .density-prefix { position: absolute; left: 16px; font-size: 1.3rem; font-weight: 800; color: var(--text-main); pointer-events: none; }
+        #density { padding-left: 38px; margin-bottom: 0; }
+        
+        .addon-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 5px; margin-top: 12px; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px 12px; border-radius: 14px; border-left: 4px solid #ccc; transition: 0.2s; cursor: pointer; }
+        body.light-theme .toggle-row { background: rgba(0,0,0,0.02); }
+        
+        .toggle-row.active.sci { border-left-color: var(--scimol); background: rgba(8, 145, 178, 0.15); }
+        .toggle-row.active.azl { border-left-color: var(--azol); background: rgba(194, 65, 12, 0.15); }
+        .toggle-row.active.gf { border-left-color: var(--gf1); background: rgba(124, 58, 237, 0.15); }
+        .toggle-row.active.uno { border-left-color: var(--uno); background: rgba(219, 39, 119, 0.15); }
+        
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; pointer-events: none; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(18px); }
+        
+        .results { 
+            background: var(--dark-panel); 
+            color: #fff; 
+            padding: 20px; 
+            border-radius: 26px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 15px var(--neon-purple); 
+        }
+        body.light-theme .results {
+            background: #ffffff !important;
+            color: #0f172a;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .res-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        .val { font-family: 'Roboto Mono', monospace; font-size: 1.25rem; font-weight: 700; }
+        
+        .btn-main { width: 100%; padding: 20px; border: none; border-radius: 18px; background: var(--primary); color: white; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.1rem; cursor: pointer; margin-bottom: 20px; text-transform: uppercase; box-shadow: 0 5px 15px var(--neon-blue); transition: 0.3s; }
+        .btn-main:active { transform: scale(0.98); }
+        
+        .summary-card { background: var(--dark-panel); color: white; border-radius: 28px; padding: 20px; margin-bottom: 15px; border: 2px solid var(--primary); box-shadow: 0 0 20px var(--neon-blue); }
+        .sum-title { font-size: 0.85rem; font-weight: 900; color: var(--primary); text-transform: uppercase; margin-bottom: 15px; text-align: center; }
+        .sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .sum-item { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 16px; border-top: 3px solid var(--primary); }
+        .sum-label { font-size: 0.6rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .sum-val { font-family: 'Roboto Mono', monospace; font-size: 1.15rem; font-weight: 700; display: block; }
+        
+        .inventory-card { background: var(--dark-panel); border: 2px solid var(--gold); border-radius: 28px; padding: 20px; margin-bottom: 20px; }
+        .inv-title { color: var(--gold); font-size: 0.85rem; font-weight: 900; text-align: center; text-transform: uppercase; margin-bottom: 15px; }
+        .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .inv-item { background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 16px; border-bottom: 3px solid var(--gold); text-align: center; }
+        .inv-label { font-size: 0.6rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; }
+        .inv-val { color: #fff; font-family: 'Roboto Mono', monospace; font-size: 1.3rem; font-weight: 900; }
+
+        .btn-copy-total { width: 100%; background: var(--success); color: white; border: none; padding: 18px; border-radius: 18px; font-family: 'Montserrat', sans-serif; font-weight: 900; cursor: pointer; font-size: 1rem; text-transform: uppercase; }
+        
+        .history-card { background: var(--card-bg); border-radius: 20px; padding: 18px; margin-bottom: 15px; border-left: 6px solid var(--primary); position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .h-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 900; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; font-size: 0.95rem; flex-wrap: wrap; gap: 8px; }
+        body.light-theme .h-header { border-bottom-color: #e2e8f0; }
+        
+        .h-main-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+        .h-addon-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 14px; }
+        body.light-theme .h-addon-grid { background: #f8fafc; }
+        
+        .h-item { display: flex; flex-direction: column; }
+        .h-label { font-size: 0.55rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+        .h-val { font-size: 0.85rem; font-weight: 800; }
+        
+        .sci-c { color: var(--scimol) !important; } 
+        .azl-c { color: var(--azol) !important; } 
+        .gf-c { color: var(--gf1) !important; } 
+        .wat-c { color: var(--water) !important; } 
+        .uno-c { color: var(--uno) !important; }
+        
+        .clear-btn { width: 100%; background: none; border: 2px solid var(--danger); color: var(--danger); padding: 15px; border-radius: 16px; font-family: 'Montserrat', sans-serif; font-weight: 800; cursor: pointer; margin-top: 10px; font-size: 0.8rem; margin-bottom: 50px; }
+
+        body.light-theme .summary-card,
+        body.light-theme .inventory-card {
+            background: #ffffff !important;
+            color: #0f172a;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        body.light-theme .summary-card .sum-title {
+            color: var(--primary);
+        }
+
+        body.light-theme .inventory-card .inv-title {
+            color: var(--gold);
+        }
+
+        body.light-theme .sum-item,
+        body.light-theme .inv-item {
+            background: rgba(0,0,0,0.02);
+        }
+
+        body.light-theme .sum-val,
+        body.light-theme .inv-val {
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body class="light-theme">
+
+<div id="infoModal">
+    <div class="modal-content">
+        <div class="modal-text">
+             Основные функции и возможности :<br>
+Расчет состава раствора: Позволяет рассчитать необходимые объемы компонентов исходя из общего объема (м³) и плотности раствора.<br>
+Учет реагентов: В калькуляторе указаны конкретные химические продукты и добавки.<br>
+            <span class="dev-name">Разработчик: Федосеенко М. Ю.</span>
+        </div>
+        <button class="close-modal" onclick="closeInfo()">Понятно</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header-main">
+        <div class="brand">АТОЛЛ</div>
+        <div class="header-btns">
+            <button class="info-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+            <button class="info-btn" onclick="openInfo()">i</button>
+        </div>
+    </div>
+
+    <div class="card" style="border-color: var(--gold);">
+        <label style="color: var(--gold); border-bottom: 1px solid rgba(245,158,11,0.2); padding-bottom: 5px; margin-bottom: 12px;">Остаток на утро — Приготовление (м³)</label>
+        <div class="stock-grid">
+            <div class="stock-input-group">
+                <label>Остаток 1.18</label>
+                <input type="number" id="start118" placeholder="0.0" oninput="calculateStock()">
+            </div>
+            <div class="stock-input-group">
+                <label>Остаток 1.48</label>
+                <input type="number" id="start148" placeholder="0.0" oninput="calculateStock()">
+            </div>
+            <div class="stock-input-group">
+                <label>Приготовлено 1.18</label>
+                <input type="number" id="add118" placeholder="0.0" oninput="calculateStock()">
+            </div>
+            <div class="stock-input-group">
+                <label>Приготовлено 1.48</label>
+                <input type="number" id="add148" placeholder="0.0" oninput="calculateStock()">
+            </div>
+            <div class="stock-input-group">
+                <label>Расход сух. галит (меш.)</label>
+                <input type="number" id="dryGalitBags" placeholder="0" step="1" min="0" oninput="saveDryBags()">
+            </div>
+            <div class="stock-input-group">
+                <label>Расход сух. нитрат (меш.)</label>
+                <input type="number" id="dryNitratBags" placeholder="0" step="1" min="0" oninput="saveDryBags()">
+            </div>
+            <div class="stock-input-group">
+                <label>Мешкотара</label>
+                <input type="number" id="meshkotara" placeholder="0" step="1" min="0" oninput="saveMeshkotara()">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <label>Объем раствора (м³)</label>
+        <input type="number" id="volume" placeholder="0.0" oninput="calculate()" step="0.1">
+        
+        <label>Плотность раствора </label>
+        <div class="density-wrapper">
+            <span class="density-prefix">1.</span>
+            <input type="number" id="density" placeholder="00" oninput="limitDensityInput(this); calculate();" pattern="\d*">
+        </div>
+
+        <div class="addon-controls">
+            <div class="toggle-row sci" id="rowSci" onclick="toggleSwitch('useSci')">
+                <span class="t-label sci-c">SCIMOL</span>
+                <label class="switch"><input type="checkbox" id="useSci" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row azl" id="rowAzl" onclick="toggleSwitch('useAzl')">
+                <span class="t-label azl-c">АЗОЛ</span>
+                <label class="switch"><input type="checkbox" id="useAzl" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row gf" id="rowGf" onclick="toggleSwitch('useGf')">
+                <span class="t-label gf-c">ГФ-1</span>
+                <label class="switch"><input type="checkbox" id="useGf" checked><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row uno" id="rowUno" onclick="toggleSwitch('useUno')">
+                <span class="t-label uno-c">УноКем</span>
+                <label class="switch"><input type="checkbox" id="useUno" checked><span class="slider"></span></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="results">
+        <div class="res-row"><span>Галит 1.18 (м³)</span> <span id="res118" class="val">0.000</span></div>
+        <div class="res-row"><span>Нитрат 1.48 (м³)</span> <span id="res148" class="val">0.000</span></div>
+        <div class="res-row"><span>Тех.вода (м³)</span> <span id="resWater" class="val wat-c">0.000</span></div>
+        <div class="res-row"><span class="sci-c">SCIMOL (л)</span> <span id="resSci" class="val sci-c">0.00</span></div>
+        <div class="res-row"><span class="azl-c">АЗОЛ (л)</span> <span id="resAzl" class="val azl-c">0.00</span></div>
+        <div class="res-row"><span class="gf-c">ГФ-1 (л)</span> <span id="resGf" class="val gf-c">0.000</span></div>
+        <div class="res-row" style="border:none"><span class="uno-c">УноКем (л)</span> <span id="resUno" class="val uno-c">0.00</span></div>
+    </div>
+
+    <button class="btn-main" onclick="saveEntry()">Сохранить расчет</button>
+
+    <div class="summary-card">
+        <div class="sum-title">Итог за смену (Расход)</div>
+        <div class="sum-grid">
+            <div class="sum-item"><span class="sum-label">Галит 1.18</span><span id="s118" class="sum-val">0.000</span></div>
+            <div class="sum-item"><span class="sum-label">Нитрат 1.48</span><span id="s148" class="sum-val">0.000</span></div>
+            <div class="sum-item" style="border-top-color: var(--water)"><span class="sum-label wat-c">Вода</span><span id="sWater" class="sum-val wat-c">0.000</span></div>
+            <div class="sum-item" style="border-top-color: var(--scimol)"><span class="sum-label sci-c">Scimol</span><span id="sSci" class="sum-val sci-c">0.00</span></div>
+            <div class="sum-item" style="border-top-color: var(--azol)"><span class="sum-label azl-c">Азол</span><span id="sAzl" class="sum-val azl-c">0.00</span></div>
+            <div class="sum-item" style="border-top-color: var(--gf1)"><span class="sum-label gf-c">ГФ-1</span><span id="sGf" class="sum-val gf-c">0.000</span></div>
+            <div class="sum-item" style="border-top-color: var(--danger)"><span class="sum-label" style="color:var(--danger)">Кислота (л)</span><span id="sHClL" class="sum-val" style="color:var(--danger)">0.000</span></div>
+            <div class="sum-item" style="border-top-color: var(--danger)"><span class="sum-label" style="color:var(--danger)">Кислота (кг)</span><span id="sHClKg" class="sum-val" style="color:var(--danger)">0.000</span></div>
+            <div class="sum-item" style="border-top-color: var(--uno); grid-column: span 2; text-align: center;"><span class="sum-label uno-c">Доп ингибирование УноКем </span><span id="sUno" class="sum-val uno-c">0.00</span></div>
+        </div>
+    </div>
+
+    <div class="inventory-card">
+        <div class="inv-title">В наличии (Итог)</div>
+        <div class="inv-grid">
+            <div class="inv-item">
+                <span class="inv-label">Галит 1.18 (м³)</span>
+                <div id="stock118Final" class="inv-val">0.000</div>
+            </div>
+            <div class="inv-item">
+                <span class="inv-label">Нитрат 1.48 (м³)</span>
+                <div id="stock148Final" class="inv-val">0.000</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 25px;">
+        <button class="btn-copy-total" onclick="copyReport()">Копировать отчет</button>
+    </div>
+
+    <div id="historyCards"></div>
+    <button class="clear-btn" onclick="clearHistory()">ОЧИСТИТЬ ВСЕ ДАННЫЕ</button>
+</div>
+
+<script>
+    // Константы и коэффициенты
+    const sci_Fixed_100 = { 1:1.0, 2:2.1, 3:3.1, 4:4.2, 5:5.2, 6:6.3, 7:7.3, 8:8.4, 9:9.4, 10:10.5, 11:11.5, 12:12.6, 13:13.6, 14:14.6, 15:15.7, 16:16.7, 17:17.8, 18:18.8, 19:19.9, 20:20.9 };
+    const gf1_Fixed_100 = { 1:0.012, 2:0.025, 3:0.037, 4:0.049, 5:0.061, 6:0.074, 7:0.086, 8:0.098, 9:0.110, 10:0.123, 11:0.135, 12:0.147, 13:0.160, 14:0.172, 15:0.184, 16:0.196, 17:0.209, 18:0.221, 19:0.233, 20:0.246 };
+    
+    const AZOL_COEFF = 0.009708738;
+    const GALIT_STEP_KOEF = 0.0555555555555; 
+    const NITRAT_STEP_KOEF = 0.0333333333333;
+
+    let history = JSON.parse(localStorage.getItem('atol_v26')) || [];
+    
+    window.onload = () => { 
+        loadStock();
+        loadDryBags();
+        loadMeshkotara();
+        updateUI(); 
+        updateRows(); 
+        calculateStock();
+    };
+
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        body.classList.toggle('light-theme');
+        btn.innerText = body.classList.contains('light-theme') ? '🌙' : '☀️';
+    }
+
+    function saveStock() {
+        const stockData = {
+            s118: document.getElementById('start118').value || '',
+            s148: document.getElementById('start148').value || '',
+            a118: document.getElementById('add118').value || '',
+            a148: document.getElementById('add148').value || ''
+        };
+        localStorage.setItem('atol_stock', JSON.stringify(stockData));
+    }
+
+    function loadStock() {
+        const stockData = JSON.parse(localStorage.getItem('atol_stock'));
+        if(stockData) {
+            document.getElementById('start118').value = stockData.s118 || '';
+            document.getElementById('start148').value = stockData.s148 || '';
+            document.getElementById('add118').value = stockData.a118 || '';
+            document.getElementById('add148').value = stockData.a148 || '';
+        }
+    }
+
+    function saveDryBags() {
+        const data = {
+            galitBags: document.getElementById('dryGalitBags').value || '0',
+            nitratBags: document.getElementById('dryNitratBags').value || '0'
+        };
+        localStorage.setItem('atol_dry_bags', JSON.stringify(data));
+    }
+
+    function loadDryBags() {
+        const saved = JSON.parse(localStorage.getItem('atol_dry_bags'));
+        if (saved) {
+            document.getElementById('dryGalitBags').value = saved.galitBags || '';
+            document.getElementById('dryNitratBags').value = saved.nitratBags || '';
+        }
+    }
+
+    function saveMeshkotara() {
+        localStorage.setItem('atol_meshkotara', document.getElementById('meshkotara').value || '0');
+    }
+
+    function loadMeshkotara() {
+        const saved = localStorage.getItem('atol_meshkotara');
+        if (saved !== null) {
+            document.getElementById('meshkotara').value = saved;
+        }
+    }
+
+    function calculateStock() {
+        saveStock();
+        const s118 = parseFloat(document.getElementById('start118').value) || 0;
+        const s148 = parseFloat(document.getElementById('start148').value) || 0;
+        const a118 = parseFloat(document.getElementById('add118').value) || 0;
+        const a148 = parseFloat(document.getElementById('add148').value) || 0;
+        const used118 = parseFloat(document.getElementById('s118').innerText) || 0;
+        const used148 = parseFloat(document.getElementById('s148').innerText) || 0;
+        document.getElementById('stock118Final').innerText = (s118 + a118 - used118).toFixed(3);
+        document.getElementById('stock148Final').innerText = (s148 + a148 - used148).toFixed(3);
+
+        const hclL = a148 * 0.277;
+        const hclKg = a148 * 0.31024;
+        document.getElementById('sHClL').innerText = hclL.toFixed(3);
+        document.getElementById('sHClKg').innerText = hclKg.toFixed(3);
+    }
+
+    function openInfo() { document.getElementById('infoModal').style.display = 'flex'; }
+    function closeInfo() { document.getElementById('infoModal').style.display = 'none'; }
+
+    function toggleSwitch(id) {
+        const cb = document.getElementById(id);
+        cb.checked = !cb.checked;
+        updateRows(); calculate();
+    }
+
+    function updateRows() {
+        document.getElementById('rowSci').classList.toggle('active', document.getElementById('useSci').checked);
+        document.getElementById('rowAzl').classList.toggle('active', document.getElementById('useAzl').checked);
+        document.getElementById('rowGf').classList.toggle('active', document.getElementById('useGf').checked);
+        document.getElementById('rowUno').classList.toggle('active', document.getElementById('useUno').checked);
+    }
+
+    function limitDensityInput(el) {
+        if (el.value.length > 2) el.value = el.value.slice(0, 2);
+    }
+
+    function getFullDensity() {
+        const val = document.getElementById('density').value || '';
+        return val ? parseFloat("1." + val) : 1.00;
+    }
+
+    function calculate() {
+        const vol = parseFloat(document.getElementById('volume').value) || 0;
+        let dens = getFullDensity();
+        const r = Math.round(vol);
+
+        let res118 = 0, res148 = 0, resWater = 0;
+        if (dens <= 1.00) { 
+            resWater = vol; 
+        } 
+        else if (dens <= 1.18) {
+            let steps = (dens - 1.00) * 100;
+            res118 = vol * (steps * GALIT_STEP_KOEF);
+            resWater = Math.max(0, vol - res118);
+        } else {
+            let stepsH = (dens - 1.18) * 100;
+            res148 = vol * (stepsH * NITRAT_STEP_KOEF);
+            res118 = Math.max(0, vol - res148);
+        }
+
+        document.getElementById('res118').innerText = res118.toFixed(3);
+        document.getElementById('res148').innerText = res148.toFixed(3);
+        document.getElementById('resWater').innerText = resWater.toFixed(3);
+        
+        let s = 0, a = 0, g = 0, u = 0;
+        if (dens <= 1.00) {
+            if(document.getElementById('useSci').checked) s = sci_Fixed_100[r] || (vol * 1.045); 
+            if(document.getElementById('useAzl').checked) a = vol * AZOL_COEFF; 
+            if(document.getElementById('useGf').checked) g = gf1_Fixed_100[r] || (vol * 0.0123);
+        } else if (dens <= 1.18) {
+            if(document.getElementById('useSci').checked) s = vol * 0.209205021;
+            if(document.getElementById('useAzl').checked) a = vol * AZOL_COEFF;
+            if(document.getElementById('useGf').checked) g = vol * 0.012723214;
+        } else {
+            if(document.getElementById('useSci').checked) s = vol * 5.230125523;
+            if(document.getElementById('useGf').checked) g = vol * 0.029464286;
+        }
+        
+        if(document.getElementById('useUno').checked && dens > 1.18) {
+            u = vol * 0.1425;
+        }
+
+        document.getElementById('resSci').innerText = s.toFixed(2);
+        document.getElementById('resAzl').innerText = a.toFixed(2);
+        document.getElementById('resGf').innerText = g.toFixed(3);
+        document.getElementById('resUno').innerText = u.toFixed(2);
+
+        calculateStock();
+    }
+
+    function saveEntry() {
+        const volInput = document.getElementById('volume').value; 
+        if (!volInput || parseFloat(volInput) <= 0) return;
+        let dVal = getFullDensity().toFixed(2);
+        history.unshift({
+            id: Date.now(), 
+            d: dVal, 
+            v: volInput,
+            v118: document.getElementById('res118').innerText, 
+            v148: document.getElementById('res148').innerText,
+            w: document.getElementById('resWater').innerText, 
+            s: document.getElementById('resSci').innerText,
+            a: document.getElementById('resAzl').innerText, 
+            g: document.getElementById('resGf').innerText,
+            u: document.getElementById('resUno').innerText
+        });
+        localStorage.setItem('atol_v26', JSON.stringify(history)); 
+        updateUI();
+        document.getElementById('volume').value = '';
+        document.getElementById('density').value = '';
+    }
+
+    function updateUI() {
+        const container = document.getElementById('historyCards');
+        container.innerHTML = "";
+
+        let sums = { v118:0, v148:0, w:0, s:0, a:0, g:0, u:0 };
+
+        history.forEach(i => {
+            sums.v118 += parseFloat(i.v118||0); 
+            sums.v148 += parseFloat(i.v148||0); 
+            sums.w    += parseFloat(i.w||0);
+            sums.s    += parseFloat(i.s||0); 
+            sums.a    += parseFloat(i.a||0); 
+            sums.g    += parseFloat(i.g||0); 
+            sums.u    += parseFloat(i.u||0);
+
+            container.innerHTML += `<div class="history-card">
+                <div class="h-header">
+                    <span>Расчёт: ${i.v} м³ при плотности ${i.d} г/см³</span>
+                    <span onclick="del(${i.id})" style="color:var(--danger); cursor:pointer; padding:5px;">✕</span>
+                </div>
+                <div class="h-main-grid">
+                    <div class="h-item"><span class="h-label">Галит 1.18</span><span class="h-val">${i.v118||'0.000'}</span></div>
+                    <div class="h-item"><span class="h-label">Нитрат 1.48</span><span class="h-val">${i.v148||'0.000'}</span></div>
+                    <div class="h-item"><span class="h-label wat-c">Вода</span><span class="h-val wat-c">${i.w||'0.000'}</span></div>
+                </div>
+                <div class="h-addon-grid">
+                    <div class="h-item"><span class="h-label sci-c">Scimol</span><span class="h-val sci-c">${Number(i.s||0).toFixed(2)}</span></div>
+                    <div class="h-item"><span class="h-label azl-c">Азол</span><span class="h-val azl-c">${i.a||'0.00'}</span></div>
+                    <div class="h-item"><span class="h-label gf-c">ГФ-1</span><span class="h-val gf-c">${i.g||'0.000'}</span></div>
+                    <div class="h-item"><span class="h-label uno-c">УноКем</span><span class="h-val uno-c">${i.u||'0.00'}</span></div>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('s118').innerText = sums.v118.toFixed(3);
+        document.getElementById('s148').innerText = sums.v148.toFixed(3);
+        document.getElementById('sWater').innerText = sums.w.toFixed(3);
+        document.getElementById('sSci').innerText = sums.s.toFixed(2);
+        document.getElementById('sAzl').innerText = sums.a.toFixed(2);
+        document.getElementById('sGf').innerText = sums.g.toFixed(3);
+        document.getElementById('sUno').innerText = sums.u.toFixed(2);
+        
+        calculateStock();
+    }
+
+    function copyReport() {
+        const s118 = document.getElementById('start118').value || '0.0';
+        const s148 = document.getElementById('start148').value || '0.0';
+        const a118 = document.getElementById('add118').value || '0.0';
+        const a148 = document.getElementById('add148').value || '0.0';
+
+        const galitBags  = document.getElementById('dryGalitBags').value  || '0';
+        const nitratBags = document.getElementById('dryNitratBags').value || '0';
+        const meshkotara = document.getElementById('meshkotara').value || '0';
+
+        const hclL = (parseFloat(a148) || 0) * 0.277;
+        const hclKg = (parseFloat(a148) || 0) * 0.31024;
+
+        const text = `⚡ Сводка АТОЛЛ ⚡\n` +
+               `--------------------\n` +
+               `  ⚠️ ОСТАТОК НА УТРО:\n` +
+               `  🟢 Галит 1.18:.....${s118} м³\n` +
+               `  🔴 Нитрат 1.48:.....${s148} м³\n` +
+               `--------------------\n` +
+               `  🏁 ПРИГОТОВЛЕНИЕ РАСТВОРА:\n` +
+               `  🟢 Галит 1.18:.....${a118} м³\n` +
+               `  🔴 Нитрат 1.48:.....${a148} м³\n` +
+               `--------------------\n` +
+               `  🔥 РАСХОД :\n` +
+               `  🟢 Галит 1.18:.....${document.getElementById('s118').innerText} м³\n` +
+               `  🟢 Сухой Галит:.....${galitBags} меш.\n` +
+               `  🔴 Нитрат 1.48:.....${document.getElementById('s148').innerText} м³\n` +
+               `  🔴 Сухой Нитрат:.....${nitratBags} меш.\n` +
+               `  🛢️ Мешкотара:.....${meshkotara} шт.\n` +
+               `  💧 Тех.вода:.....${document.getElementById('sWater').innerText} м³\n` +
+               `  🧪 Scimol:.....${document.getElementById('sSci').innerText} л\n` +
+               `  🧪 Азол:.....${document.getElementById('sAzl').innerText} л\n` +
+               `  🧪 ГФ-1:.....${document.getElementById('sGf').innerText} л\n` +
+               `  🧪 Соляная кислота:.....${hclL.toFixed(3)} л / ${hclKg.toFixed(3)} кг\n` +
+               `  🧪 УноКем:.....${document.getElementById('sUno').innerText} л\n` +
+               `--------------------\n` +
+               `✅ В НАЛИЧИИ :\n` +
+               `📍 Галит 1.18.....: ${document.getElementById('stock118Final').innerText} м³\n` +
+               `📍 Нитрат 1.48.....: ${document.getElementById('stock148Final').innerText} м³\n` +
+               `--------------------\n` +
+               `Дата: ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}`;
+
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus(); textArea.select();
+        try { 
+            document.execCommand('copy'); 
+            alert("Отчет скопирован!"); 
+        } catch(e) { 
+            alert("Ошибка копирования"); 
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function del(id) { 
+        history = history.filter(x => x.id !== id); 
+        localStorage.setItem('atol_v26', JSON.stringify(history)); 
+        updateUI(); 
+    }
+
+    function clearHistory() { 
+        if(confirm("Очистить всю историю?")) { 
+            history = []; 
+            localStorage.removeItem('atol_v26'); 
+            updateUI(); 
+        } 
+    }
+</script>
+</body>
+</html>
